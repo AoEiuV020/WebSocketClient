@@ -24,6 +24,7 @@ class MainActivity : Activity(), Logger {
     fun color(res: Int) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         getColor(res)
     } else {
+        @Suppress("DEPRECATION")
         resources.getColor(res)
     }
 
