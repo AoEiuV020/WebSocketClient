@@ -113,7 +113,7 @@ class MainActivity : Activity(), Logger {
         val client = OkHttpClient()
         val request = try {
             Request.Builder().url(str).build()
-        } catch (e: IllegalAccessException) {
+        } catch (e: IllegalArgumentException) {
             error { "${e.message}" }
             beforeConnect()
             return
