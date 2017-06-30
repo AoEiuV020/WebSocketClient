@@ -36,25 +36,22 @@
         tools:layout_editor_absoluteX="280dp"
         tools:layout_editor_absoluteY="16dp" />
 
-    <ScrollView
-        android:id="@+id/scrollView"
+    <ListView
+        android:id="@+id/listView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="16dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        android:divider="@null"
         app:layout_constraintBottom_toTopOf="@+id/editTextMessage"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextUrl">
+        app:layout_constraintTop_toBottomOf="@+id/editTextUrl"
+        tools:listitem="@layout/message_item">
 
-        <LinearLayout
-            android:id="@+id/textLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
+    </ListView>
 
     <EditText
         android:id="@+id/editTextMessage"

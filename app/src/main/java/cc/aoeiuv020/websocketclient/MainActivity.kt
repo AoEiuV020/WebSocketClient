@@ -2,12 +2,8 @@ package cc.aoeiuv020.websocketclient
 
 import android.app.Activity
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
 import android.widget.ArrayAdapter
-import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_main.*
 import okhttp3.*
 
@@ -16,8 +12,9 @@ class MainActivity : Activity(), Logger {
     val wsUrl: String? get() = webSocket?.request()?.url()?.toString()
     val listener = Listener()
     val urlSet = mutableSetOf<String>()
-    lateinit var adapter: ArrayAdapter<String>
+    lateinit var urlAdapter: ArrayAdapter<String>
     val URL_KEY_NAME = "url_key_name"
+    val messageListAdapter = MessageListAdapter(this)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -26,9 +23,10 @@ class MainActivity : Activity(), Logger {
             urlSet.addAll(it)
         }
         ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, urlSet.toList()).let {
-            adapter = it
+            urlAdapter = it
             editTextUrl.setAdapter(it)
         }
+        listView.adapter = messageListAdapter
 
         beforeConnect()
     }
@@ -46,36 +44,14 @@ class MainActivity : Activity(), Logger {
         webSocket?.close(1000, "destroy")
     }
 
-    fun color(res: Int) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        getColor(res)
-    } else {
-        @Suppress("DEPRECATION")
-        resources.getColor(res)
-    }
-
     @Synchronized
-    fun addText(text: CharSequence, type: MessageType) {
-        debug { "add text <$text> : $type" }
-        val tv = TextView(this).apply {
-            setTextIsSelectable(true)
-            setText(text)
-            gravity = when (type) {
-                MessageType.ME -> Gravity.END
-                MessageType.OTHER -> Gravity.START
-                MessageType.LOG -> Gravity.CENTER
+    fun addMessage(message: Message) {
+        debug { "add message <$message>" }
+        messageListAdapter.add(message)
+        listView.apply {
+            post {
+                setSelection(adapter.count - 1)
             }
-            when (type) {
-                MessageType.ME -> color(R.color.messageFromMe)
-                MessageType.OTHER -> color(R.color.messageFromOther)
-                MessageType.LOG -> color(R.color.messageFromLog)
-            }.let {
-                setBackgroundColor(it)
-            }
-        }
-        textLayout.addView(tv)
-        scrollView.post {
-            scrollView.fullScroll(View.FOCUS_DOWN)
-            editTextMessage.requestFocus()
         }
     }
 
@@ -98,7 +74,7 @@ class MainActivity : Activity(), Logger {
 
     fun connecting(str: String) {
         debug { "connecting $str" }
-        adapter.takeUnless { str in urlSet }?.apply {
+        urlAdapter.takeUnless { str in urlSet }?.apply {
             add(str)
             urlSet.add(str)
         }
@@ -123,7 +99,7 @@ class MainActivity : Activity(), Logger {
 
     fun connected() {
         debug { "connected $wsUrl" }
-        addText("${wsUrl} connected", MessageType.LOG)
+        addMessage(Message("${wsUrl} connected", MessageType.LOG))
         buttonConnect.apply {
             isClickable = true
             text = getString(R.string.close)
@@ -137,7 +113,7 @@ class MainActivity : Activity(), Logger {
             setColorFilter(color(R.color.sendEnable))
             setOnClickListener {
                 editTextMessage.text.toString().takeIf(String::isNotEmpty)?.let {
-                    addText(it, MessageType.ME)
+                    addMessage(Message(it.toString(), MessageType.ME))
                     webSocket?.send(it)
                             ?: closed()
                     editTextMessage.setText("")
@@ -147,12 +123,12 @@ class MainActivity : Activity(), Logger {
     }
 
     fun message(text: String) {
-        addText(text, MessageType.OTHER)
+        addMessage(Message(text, MessageType.OTHER))
     }
 
     fun closed() {
         debug { "closed $wsUrl" }
-        addText("${wsUrl} closed", MessageType.LOG)
+        addMessage(Message("${wsUrl} closed", MessageType.LOG))
         webSocket = null
         beforeConnect()
     }
@@ -160,10 +136,6 @@ class MainActivity : Activity(), Logger {
     fun failure() {
         debug { "failure" }
         closed()
-    }
-
-    enum class MessageType {
-        ME, OTHER, LOG
     }
 
     inner class Listener : WebSocketListener() {
