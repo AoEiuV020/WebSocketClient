@@ -7,7 +7,7 @@
     android:background="#eee"
     tools:context="cc.aoeiuv020.websocketclient.MainActivity">
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/editTextUrl"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

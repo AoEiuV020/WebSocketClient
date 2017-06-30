@@ -1,10 +1,12 @@
 package cc.aoeiuv020.websocketclient
 
 import android.app.Activity
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_main.*
 import okhttp3.*
@@ -13,12 +15,35 @@ class MainActivity : Activity(), Logger {
     var webSocket: WebSocket? = null
     val wsUrl: String? get() = webSocket?.request()?.url()?.toString()
     val listener = Listener()
+    val urlSet = mutableSetOf<String>()
+    lateinit var adapter: ArrayAdapter<String>
+    val URL_KEY_NAME = "url_key_name"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        //TODO: editTextUrl auto complete,
-        init()
+        getPreferences(Context.MODE_PRIVATE).getStringSet(URL_KEY_NAME, setOf<String>()).let {
+            urlSet.addAll(it)
+        }
+        ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, urlSet.toList()).let {
+            adapter = it
+            editTextUrl.setAdapter(it)
+        }
+
+        beforeConnect()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        debug { "save url autocomplete list <${urlSet.size}>" }
+        getPreferences(Context.MODE_PRIVATE).edit()
+                .putStringSet(URL_KEY_NAME, urlSet)
+                .apply()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        webSocket?.close(1000, "destroy")
     }
 
     fun color(res: Int) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -54,8 +79,8 @@ class MainActivity : Activity(), Logger {
         }
     }
 
-    fun init() {
-        debug { "init" }
+    fun beforeConnect() {
+        debug { "beforeConnect" }
         buttonConnect.apply {
             isClickable = true
             text = getString(R.string.connect)
@@ -73,6 +98,10 @@ class MainActivity : Activity(), Logger {
 
     fun connecting(str: String) {
         debug { "connecting $str" }
+        adapter.takeUnless { str in urlSet }?.apply {
+            add(str)
+            urlSet.add(str)
+        }
         buttonConnect.apply {
             isClickable = false
             text = getString(R.string.connecting)
@@ -86,7 +115,7 @@ class MainActivity : Activity(), Logger {
             Request.Builder().url(str).build()
         } catch (e: IllegalAccessException) {
             error { "${e.message}" }
-            init()
+            beforeConnect()
             return
         }
         webSocket = client.newWebSocket(request, listener)
@@ -125,7 +154,7 @@ class MainActivity : Activity(), Logger {
         debug { "closed $wsUrl" }
         addText("${wsUrl} closed", MessageType.LOG)
         webSocket = null
-        init()
+        beforeConnect()
     }
 
     fun failure() {
