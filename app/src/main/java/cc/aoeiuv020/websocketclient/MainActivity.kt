@@ -16,6 +16,8 @@ class MainActivity : Activity(), Logger {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        //TODO: editTextUrl auto complete,
         init()
     }
 
@@ -47,6 +49,7 @@ class MainActivity : Activity(), Logger {
         textLayout.addView(tv)
         scrollView.post {
             scrollView.fullScroll(View.FOCUS_DOWN)
+            editTextMessage.requestFocus()
         }
     }
 
@@ -107,10 +110,7 @@ class MainActivity : Activity(), Logger {
                     addText(it, MessageType.ME)
                     webSocket?.send(it)
                             ?: closed()
-                    editTextMessage.apply {
-                        setText("")
-                        //TODO: 锁定光标焦点在这个文本框，
-                    }
+                    editTextMessage.setText("")
                 }
             }
         }
