@@ -22,7 +22,7 @@ class MainActivity : Activity(), Logger {
         getPreferences(Context.MODE_PRIVATE).getStringSet(URL_KEY_NAME, setOf<String>()).let {
             urlSet.addAll(it)
         }
-        ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, urlSet.toList()).let {
+        ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, urlSet.toMutableList()).let {
             urlAdapter = it
             editTextUrl.setAdapter(it)
         }
@@ -113,7 +113,7 @@ class MainActivity : Activity(), Logger {
             setColorFilter(color(R.color.sendEnable))
             setOnClickListener {
                 editTextMessage.text.toString().takeIf(String::isNotEmpty)?.let {
-                    addMessage(Message(it.toString(), MessageType.ME))
+                    addMessage(Message(it, MessageType.ME))
                     webSocket?.send(it)
                             ?: closed()
                     editTextMessage.setText("")
